@@ -9,6 +9,7 @@ export default async function Home() {
     <main className="main">
       <div>
         <h2>Hello World</h2>
+        <p>Welcome to your new app.</p>
       </div>
       <Link href="/about">About</Link>
       {flags.isFeatureEnabled("search") && (
