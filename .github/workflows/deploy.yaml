@@ -86,7 +86,6 @@ jobs:
         run: echo "aws_env_status=$(aws elasticbeanstalk describe-environments --application-name ${{ vars.AWS_EB_APP_NAME }} --environment-names ${{ github.event.inputs.aws-env }} --query "Environments[0].Status" --output text)" >> $GITHUB_OUTPUT
 
       - name: Initialize AWS Elastic Beanstalk
-        if: steps.get-eb-env-name.outputs.aws_env == 'None'
         run: eb init ${{ vars.AWS_EB_APP_NAME }} --platform "${{ vars.AWS_EB_PLATFORM }}" --region ${{ vars.AWS_REGION }}
 
       - name: Create AWS Elastic Beanstalk environment
