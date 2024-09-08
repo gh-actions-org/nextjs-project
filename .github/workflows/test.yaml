@@ -56,7 +56,7 @@ jobs:
 
       - name: Store Playwright version
         run: |
-          PLAYWRIGHT_VERSION=$(npm ls @playwright/test | grep @playwright | sed 's/.*@//')
+          PLAYWRIGHT_VERSION=$(npm ls @playwright/test | grep @playwright | grep -v "deduped" | sed 's/.*@//')
           echo "Playwright version: $PLAYWRIGHT_VERSION"
           echo "PLAYWRIGHT_VERSION=$PLAYWRIGHT_VERSION" >> $GITHUB_ENV
 
