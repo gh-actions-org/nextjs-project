@@ -85,7 +85,7 @@ jobs:
 
       - name: Initialize AWS Elastic Beanstalk
         if: steps.get-eb-env-name.outputs.aws_env == 'None'
-        run: eb init ${{ vars.AWS_EB_APP_NAME }} --platform ${{ vars.AWS_EB_PLATFORM }} --region ${{ vars.AWS_REGION }}
+        run: eb init ${{ vars.AWS_EB_APP_NAME }} --platform "${{ vars.AWS_EB_PLATFORM }}" --region ${{ vars.AWS_REGION }}
 
       - name: Create AWS Elastic Beanstalk environment
         if: steps.get-eb-env-name.outputs.aws_env == 'None' || steps.get-eb-env-status.outputs.aws_env_status == 'Terminated'
