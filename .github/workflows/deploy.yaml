@@ -1,0 +1,127 @@
+name: Deploy to AWS Elastic Beanstalk
+
+on:
+  workflow_dispatch:
+    inputs:
+      aws-env:
+        description: "AWS Elastic Beanstalk environment"
+        required: true
+        default: "gh-actions-staging"
+        type: string
+      github-env:
+        description: "GitHub environment"
+        required: true
+        default: "staging"
+        type: string
+  workflow_call:
+    inputs:
+      aws-env:
+        description: "AWS Elastic Beanstalk environment"
+        required: true
+        default: "gh-actions-staging"
+        type: string
+      github-env:
+        description: "GitHub environment"
+        required: true
+        default: "staging"
+        type: string
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}-${{ github.event.inputs.aws-env }}-${{ github.event.inputs.github-env }}
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: ${{ github.event.inputs.github-env }}
+      url: "http://${{ steps.get-eb-env-cname.outputs.aws_env_cname }}"
+    steps:
+      - name: Prevent deployment to Production from different environments
+        if: ${{  github.event.inputs.aws-env == vars.AWS_EB_PRODUCTION_ENV && github.event.inputs.github-env != 'production' }}
+        run: |
+          echo "::error::Cannot deploy to Production from a non production environment"
+          exit 1
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+          cache: "npm"
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Build Project
+        run: npm run build
+
+      - name: Cache pip packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip
+
+      - name: Install Elastic Beanstalk CLI
+        id: install-eb-cli
+        run: pip install awsebcli
+
+      - name: Get AWS Elastic Beanstalk environment name
+        id: get-eb-env-name
+        run: echo "aws_env=$(aws elasticbeanstalk describe-environments --application-name ${{ vars.AWS_EB_APP_NAME }} --environment-names ${{ github.event.inputs.aws-env }} --query "Environments[0].EnvironmentName" --output text)" >> $GITHUB_OUTPUT
+
+      - name: Get AWS Elastic Beanstalk environment status
+        id: get-eb-env-status
+        run: echo "aws_env_status=$(aws elasticbeanstalk describe-environments --application-name ${{ vars.AWS_EB_APP_NAME }} --environment-names ${{ github.event.inputs.aws-env }} --query "Environments[0].Status" --output text)" >> $GITHUB_OUTPUT
+
+      - name: Initialize AWS Elastic Beanstalk
+        if: steps.get-eb-env-name.outputs.aws_env == 'None'
+        run: eb init ${{ vars.AWS_EB_APP_NAME }} --platform ${{ vars.AWS_EB_PLATFORM }} --region ${{ vars.AWS_REGION }}
+
+      - name: Create AWS Elastic Beanstalk environment
+        if: steps.get-eb-env-name.outputs.aws_env == 'None' || steps.get-eb-env-status.outputs.aws_env_status == 'Terminated'
+        run: eb create ${{ vars.AWS_EB_ENV_NAME }} --instance-types ${{ vars.AWS_EB_ENV_INSTANCE_TYPES }} --cname ${{ github.event.inputs.aws-env }} --envvars FLAGSMITH_SERVER_KEY=${{ secrets.FLAGSMITH_SERVER_KEY }}
+
+      - name: Deploy to AWS Elastic Beanstalk existing environment
+        if: steps.get-eb-env-name.outputs.aws_env == github.event.inputs.aws-env && steps.get-eb-env-status.outputs.aws_env_status != 'Terminated'
+        run: eb deploy ${{ vars.AWS_EB_ENV_NAME }}
+
+      - name: Get AWS Elastic Beanstalk environment cname
+        id: get-eb-env-cname
+        run: echo "aws_env_cname=$(aws elasticbeanstalk describe-environments --application-name ${{ vars.AWS_EB_APP_NAME }} --environment-names ${{ github.event.inputs.aws-env }} --query "Environments[0].CNAME" --output text)" >> $GITHUB_OUTPUT
+
+      - name: Notify on Slack
+        uses: slackapi/slack-github-action@v1
+        continue-on-error: true
+        with:
+          payload: |
+            {
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "🚀 Deployment to AWS environment *${{ github.event.inputs.aws-env }}* using *${{ github.event.inputs.github-env }}* GitHub wnvironment  was successfull. <http://${{ steps.get-eb-env-cname.outputs.aws_env_cname }}|View Deployment>"
+                  }
+                }
+              ]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
+
+      - name: Abort deployment if Cancelled
+        if: ${{ cancelled() && steps.install-eb-cli.conclusion == 'success' }}
+        run: |
+          eb abort ${{ github.event.inputs.aws-env }}
+          echo "::error::Deployment was cancelled"
+          exit 1
