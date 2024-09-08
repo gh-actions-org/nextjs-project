@@ -63,6 +63,8 @@ jobs:
         run: npm ci
 
       - name: Build Project
+        env:
+          FLAGSMITH_SERVER_KEY: ${{ secrets.FLAGSMITH_SERVER_KEY }}
         run: npm run build
 
       - name: Cache pip packages
