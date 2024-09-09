@@ -1,0 +1,12 @@
+name: Deploy Pull Request to Staging Environment
+
+on:
+  issue_comment:
+    types: [created]
+
+jobs:
+  trigger-pr-branch-deployment:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo '${{ toJson(github.event) }}'
+      - run: echo '${{ toJson(github.ref) }}'
