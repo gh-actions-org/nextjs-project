@@ -27,7 +27,7 @@ on:
         type: string
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}-${{ github.event.inputs.aws-env }}-${{ github.event.inputs.github-env }}
+  group: ${{ github.workflow }}-${{ github.ref }}-${{ inputs.aws-env }}-${{ inputs.github-env }}
   cancel-in-progress: true
 
 jobs:
@@ -111,7 +111,7 @@ jobs:
                   "type": "section",
                   "text": {
                     "type": "mrkdwn",
-                    "text": "🚀 Deployment to AWS environment *${{ github.event.inputs.aws-env }}* using *${{ github.event.inputs.github-env }}* GitHub wnvironment  was successfull. <http://${{ steps.get-eb-env-cname.outputs.aws_env_cname }}|View Deployment>"
+                    "text": "🚀 Deployment to AWS environment *${{ inputs.aws-env }}* using *${{ inputs.github-env }}* GitHub environment  was successfull. <http://${{ steps.get-eb-env-cname.outputs.aws_env_cname }}|View Deployment>"
                   }
                 }
               ]
