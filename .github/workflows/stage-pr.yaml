@@ -35,7 +35,7 @@ jobs:
               workflow_id: 'deploy.yaml',
               ref: "${{ steps.get_pr_head_ref.outputs.result }}",
               inputs: {
-                "aws_env": `${{ vars.AWS_EB_APP_NAME }}-pr-${{ github.event.issue.number }}`,
+                "aws-env": `${{ vars.AWS_EB_APP_NAME }}-pr-${{ github.event.issue.number }}`,
                 "github-env": "staging",
                 "report-pr": `${{ github.event.issue.number }}`
               }
