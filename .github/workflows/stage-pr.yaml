@@ -32,7 +32,7 @@ jobs:
             const response = await github.rest.actions.createWorkflowDispatch({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              workflow_id: 'deploy.yml',
+              workflow_id: 'deploy.yaml',
               ref: "${{ steps.get_pr_head_ref.outputs.result }}",
               inputs: {
                 "aws_env": `${{ vars.AWS_EB_APP_NAME }}-pr-${{ github.event.issue.number }}`,
