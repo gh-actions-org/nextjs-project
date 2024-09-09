@@ -1,0 +1,22 @@
+name: Create comment in Pull Request
+
+on:
+  pull_request_target:
+    types: [opened]
+
+jobs:
+  add-deployment-info-comment:
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+    steps:
+      - name: Add Deployment Info comment
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: '🚀 Add a comment with `/deploy` in this pull request to deploy it in a new staging environment and `/destroy` to destroy the staging environment for this pull request'
+            })
