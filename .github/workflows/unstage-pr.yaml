@@ -84,14 +84,13 @@ jobs:
         uses: actions/github-script@v7
         with:
           script: |
-            await github.rest.repos.createDeploymentStatus({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              deployment_id: ${{ steps.get_latest_deployment.outputs.result }},
-              state: 'inactive',
-              description: 'Environment has been terminated',
+            const response = await github.rest.repos.createDeploymentStatus({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                deployment_id: ${{ steps.get-latest-deployment.outputs.result }},
+                state: 'inactive',
             });
-            console.log(response);
+            console.log(response)
 
       - name: Update Pull Request (Failure)
         uses: actions/github-script@v6
