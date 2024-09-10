@@ -91,6 +91,9 @@ jobs:
           FLAGSMITH_SERVER_KEY: ${{ secrets.FLAGSMITH_SERVER_KEY }}
         run: npm run build
 
+      - name: Remove Husky
+        run: npm pkg delete scripts.prepare
+
       - name: Cache pip packages
         uses: actions/cache@v4
         with:
