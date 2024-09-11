@@ -97,6 +97,7 @@ jobs:
   deploy-to-staging:
     permissions:
       pull-requests: write
+      id-token: write
     needs: run-tests
     uses: ./.github/workflows/deploy.yaml
     secrets: inherit
@@ -107,6 +108,7 @@ jobs:
   deploy-to-production:
     permissions:
       pull-requests: write
+      id-token: write
     needs: run-tests
     uses: ./.github/workflows/deploy.yaml
     secrets: inherit
